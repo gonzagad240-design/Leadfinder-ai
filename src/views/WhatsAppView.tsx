@@ -20,12 +20,14 @@ interface WhatsAppViewProps {
   chats: WhatsAppChat[];
   onSendMessage: (chatId: string, text: string) => Promise<void>;
   onToggleOptOut: (chatId: string) => Promise<void>;
+  isDemoMode?: boolean;
 }
 
 export const WhatsAppView: React.FC<WhatsAppViewProps> = ({
   chats,
   onSendMessage,
   onToggleOptOut,
+  isDemoMode = false,
 }) => {
   const [selectedChatId, setSelectedChatId] = useState<string>(chats[0]?.id || '');
   const [inputText, setInputText] = useState('');
@@ -50,6 +52,22 @@ export const WhatsAppView: React.FC<WhatsAppViewProps> = ({
 
   const handleLoadSuggestions = async () => {
     if (!activeChat) return;
+    const buildDemoSuggestions = () => [
+      {
+        title: 'Opção 1 (Agendamento rápido)',
+        text: `Olá ${activeChat.leadName}! Preparei a simulação exata que você pediu. Podemos fazer uma rápida ligação de 3 minutos agora para eu te mostrar as faixas de lance?`,
+      },
+      {
+        title: 'Opção 2 (Envio de simulação)',
+        text: `Perfeito, ${activeChat.leadName}! Estou finalizando o comparativo oficial com a tabela de prazos reduzidos e já te envio aqui no WhatsApp.`,
+      },
+    ];
+
+    if (isDemoMode) {
+      setSuggestedReplies(buildDemoSuggestions());
+      return;
+    }
+
     try {
       setIsLoadingSuggestions(true);
       const res = await fetch('/api/whatsapp/suggest-reply', {
@@ -65,21 +83,13 @@ export const WhatsAppView: React.FC<WhatsAppViewProps> = ({
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) {
           const data = await res.json();
-          setSuggestedReplies(data.options || []);
+          setSuggestedReplies(data.options || buildDemoSuggestions());
+          return;
         }
       }
+      setSuggestedReplies(buildDemoSuggestions());
     } catch {
-      // Fallback suggestions
-      setSuggestedReplies([
-        {
-          title: 'Opção 1 (Agendamento rápido)',
-          text: `Olá ${activeChat.leadName}! Preparei a simulação exata que você pediu. Podemos fazer uma rápida ligação de 3 minutos agora para eu te mostrar as faixas de lance?`,
-        },
-        {
-          title: 'Opção 2 (Envio de simulação)',
-          text: `Perfeito, ${activeChat.leadName}! Estou finalizando o comparativo oficial com a tabela de prazos reduzidos e já te envio aqui no WhatsApp.`,
-        },
-      ]);
+      setSuggestedReplies(buildDemoSuggestions());
     } finally {
       setIsLoadingSuggestions(false);
     }

@@ -26,6 +26,7 @@ interface TeamViewProps {
   team: User[];
   currentUser: User | null;
   onAddMember: (memberData: Partial<User>) => Promise<any>;
+  onDeleteMember?: (memberId: string) => Promise<void>;
   onTriggerAutoDistribution: () => Promise<{ distributedCount: number }>;
   onNavigate?: (view: any) => void;
   onTeamSync?: (profiles: User[]) => void;
@@ -35,6 +36,7 @@ export const TeamView: React.FC<TeamViewProps> = ({
   team,
   currentUser,
   onAddMember,
+  onDeleteMember,
   onTriggerAutoDistribution,
   onNavigate,
   onTeamSync,
@@ -57,9 +59,18 @@ export const TeamView: React.FC<TeamViewProps> = ({
   const isMaster =
     currentUser?.role === 'master' || currentUser?.role === 'admin_master';
   const isVendedor = currentUser?.role === 'vendedor';
+  const isDemo =
+    currentUser?.id === 'demo-evaluator-1' ||
+    currentUser?.email?.toLowerCase() === 'demo@leadfinder.ai' ||
+    currentUser?.tenantId === 'tenant-demo';
 
-  // Fetch and subscribe in real time directly to `public.profiles` (no mock arrays)
+  // Fetch and subscribe in real time directly to `public.profiles` (or use in-memory Demo team)
   const syncFromProfilesTable = async () => {
+    if (isDemo) {
+      setLiveProfiles(team);
+      setIsSyncing(false);
+      return;
+    }
     setIsSyncing(true);
     try {
       const profiles = await fetchRealtimeProfiles(currentUser);
@@ -71,7 +82,14 @@ export const TeamView: React.FC<TeamViewProps> = ({
   };
 
   useEffect(() => {
-    if (isVendedor) return;
+    if (isDemo) {
+      setLiveProfiles(team);
+      setIsSyncing(false);
+    }
+  }, [isDemo, team]);
+
+  useEffect(() => {
+    if (isVendedor || isDemo) return;
     syncFromProfilesTable();
 
     const unsubscribe = subscribeToProfilesRealtime(currentUser, (updated) => {
@@ -82,7 +100,7 @@ export const TeamView: React.FC<TeamViewProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [currentUser?.id, currentUser?.role, currentUser?.tenantId]);
+  }, [currentUser?.id, currentUser?.role, currentUser?.tenantId, isDemo]);
 
   const sellers = liveProfiles.filter((u) => u.role === 'vendedor');
   const maxSellers = isMaster ? 999999 : currentUser?.maxSellersLimit || 3;
@@ -154,6 +172,10 @@ export const TeamView: React.FC<TeamViewProps> = ({
 
   const handleDeleteMember = async (member: User) => {
     setErrorMessage(null);
+    if (isDemo && onDeleteMember) {
+      await onDeleteMember(member.id);
+      return;
+    }
     const res = await deleteRealtimeProfile(member.id);
     if (res.error) {
       setErrorMessage(res.error);
@@ -195,7 +217,11 @@ export const TeamView: React.FC<TeamViewProps> = ({
             Equipe Comercial &amp; Contas Autenticadas
           </h1>
           <p className="text-xs text-slate-400">
-            Listagem direta em tempo real da tabela <code className="text-blue-300">public.profiles</code> — sem utilizadores fictícios de demonstração.
+            {isDemo
+              ? 'Equipe simulada exclusiva do ambiente Demo — alterações não afetam a base de dados real.'
+              : 'Listagem direta em tempo real da tabela '}
+            {!isDemo && <code className="text-blue-300">public.profiles</code>}
+            {!isDemo && ' — sem utilizadores fictícios de demonstração.'}
           </p>
         </div>
 

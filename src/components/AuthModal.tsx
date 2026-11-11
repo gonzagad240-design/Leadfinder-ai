@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Lock, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { X, Lock, ShieldCheck, Loader2, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { AuthPermissions, User } from '../types';
 import { NavViewId } from './Sidebar';
-import { loginWithEmail, registerUserAccount } from '../services/authService';
+import { loginAsDemoEvaluator, loginWithEmail, registerUserAccount } from '../services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -97,6 +97,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleRecoverySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setRecoverySent(true);
+  };
+
+  const handleDemoLogin = () => {
+    setFeedbackMsg(null);
+    const demoSession = loginAsDemoEvaluator();
+    onAuthSuccess(demoSession);
+    setPassword('');
+    onClose();
   };
 
   return (
@@ -207,6 +215,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{isSubmitting ? 'Autenticando na Base...' : 'Entrar na Plataforma'}</span>
               </button>
+
+              {/* Reviewer / Evaluator Instant Demo Access (Isolated Fictional Sandbox) */}
+              <div className="pt-4 mt-4 border-t border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-semibold">
+                    Acesso Rápido para Avaliação
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-[9px] uppercase tracking-wider">
+                    Acesso Demonstração
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDemoLogin}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 cursor-pointer transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Entrar como Avaliador (Demo)</span>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                </button>
+
+                <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                  Entra automaticamente com o perfil simulado <code className="text-emerald-300">demo@leadfinder.ai</code> e dados fictícios de exemplo, sem afetar a sua conta pessoal.
+                </p>
+              </div>
             </form>
           )}
 

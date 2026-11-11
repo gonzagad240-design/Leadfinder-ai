@@ -33,6 +33,7 @@ interface OutboundProspectingViewProps {
   onSelectLead: (lead: Lead) => void;
   onNavigate: (view: any) => void;
   onRefreshAllData: () => Promise<void>;
+  onDemoRunSearch?: (profile: OutboundTargetProfile) => Lead[];
 }
 
 const INDUSTRIES = [
@@ -65,6 +66,7 @@ export const OutboundProspectingView: React.FC<OutboundProspectingViewProps> = (
   onSelectLead,
   onNavigate,
   onRefreshAllData,
+  onDemoRunSearch,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [runningProfileId, setRunningProfileId] = useState<string | null>(null);
@@ -104,6 +106,21 @@ export const OutboundProspectingView: React.FC<OutboundProspectingViewProps> = (
     try {
       setRunningProfileId(profile.id);
       setSuccessFeedback(null);
+
+      if (onDemoRunSearch) {
+        const simulated = onDemoRunSearch(profile);
+        setRecentFoundLeads(simulated);
+        setSuccessFeedback(
+          `${simulated.length} novos leads demonstrativos prospectados e qualificados no ambiente Demo!`
+        );
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        return;
+      }
+
       const res = await fetch(`/api/outbound/run-search/${profile.id}`, {
         method: 'POST',
         headers: { Accept: 'application/json' },

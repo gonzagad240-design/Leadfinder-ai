@@ -109,7 +109,41 @@ export const LeadsDatabaseView: React.FC<LeadsDatabaseViewProps> = ({
     });
 
   const handleExport = (format: 'csv' | 'json') => {
-    window.open(`/api/leads/export?format=${format}`, '_blank');
+    const content =
+      format === 'json'
+        ? JSON.stringify(filtered, null, 2)
+        : [
+            ['ID', 'Nome', 'Telefone', 'E-mail', 'Cidade', 'UF', 'Produto', 'Valor Pretendido', 'Parcela', 'Score', 'Temperatura', 'Etapa', 'Vendedor'].join(';'),
+            ...filtered.map((l) =>
+              [
+                l.id,
+                `"${String(l.name || '').replace(/"/g, '""')}"`,
+                `"${String(l.phone || '').replace(/"/g, '""')}"`,
+                `"${String(l.email || '').replace(/"/g, '""')}"`,
+                `"${String(l.city || '').replace(/"/g, '""')}"`,
+                l.state || '',
+                l.product || '',
+                l.targetValue || 0,
+                l.installmentBudget || 0,
+                l.score || 0,
+                l.temperature || '',
+                l.status || '',
+                `"${String(l.sellerName || '').replace(/"/g, '""')}"`,
+              ].join(';')
+            ),
+          ].join('\n');
+
+    const blob = new Blob([content], {
+      type: format === 'json' ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads-leadfinder.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleBatchQualifyClick = async () => {

@@ -15,16 +15,17 @@ import {
 } from 'lucide-react';
 import { Lead } from '../types';
 
-interface AiAssistantViewProps {
-  leads: Lead[];
-  onSelectLead: (lead: Lead) => void;
-}
-
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string;
+}
+
+interface AiAssistantViewProps {
+  leads: Lead[];
+  onSelectLead: (lead: Lead) => void;
+  isDemoMode?: boolean;
 }
 
 const SHORTCUT_QUESTIONS = [
@@ -39,7 +40,8 @@ const SHORTCUT_QUESTIONS = [
 
 export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   leads,
-  onSelectLead,
+  onSelectLead: _onSelectLead,
+  isDemoMode = false,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -72,21 +74,53 @@ Como posso acelerar suas vendas hoje? Escolha uma das perguntas rápidas abaixo 
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/gemini/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ message: text }),
-      });
+      let replyText = '';
 
-      let replyText = 'Não consegui obter uma resposta do modelo no momento.';
-      if (res.ok) {
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          const data = await res.json();
-          replyText = data.reply || replyText;
+      if (!isDemoMode) {
+        const res = await fetch('/api/gemini/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ message: text }),
+        });
+
+        if (res.ok) {
+          const ct = res.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const data = await res.json();
+            replyText = data.reply || '';
+          }
+        }
+      }
+
+      if (!replyText) {
+        const lower = text.toLowerCase();
+        const hot = [...leads]
+          .filter((l) => l.temperature === 'Muito quente' || l.temperature === 'Quente')
+          .sort((a, b) => b.score - a.score);
+        if (lower.includes('quente') || lower.includes('urg')) {
+          const topList = hot
+            .slice(0, 4)
+            .map((l) => `• **${l.name}** (${l.product} — R$ ${l.targetValue.toLocaleString('pt-BR')}) | Score: ${l.score}`)
+            .join('\n');
+          replyText = topList
+            ? `Prioridades de atendimento hoje com base na sua carteira (${hot.length} leads quentes):\n\n${topList}\n\nSugestão: Inicie pelo contato de maior score oferecendo simulação com lance embutido ou carta contemplada.`
+            : 'Nenhum lead quente encontrado no momento.';
+        } else if (lower.includes('imóv') || lower.includes('imov')) {
+          const imoveis = leads.filter((l) => l.product.toLowerCase().includes('imóv') || l.product.toLowerCase().includes('imob'));
+          replyText = imoveis.length
+            ? `Clientes focados em Imóveis (${imoveis.length}):\n\n${imoveis.map((l) => `• **${l.name}** — R$ ${l.targetValue.toLocaleString('pt-BR')} (${l.city}/${l.state})`).join('\n')}`
+            : 'Não há leads ativos buscando imóveis no momento.';
+        } else if (lower.includes('contemplada')) {
+          const comp = leads.filter((l) => l.interestedInContemplada || l.product === 'Carta Contemplada');
+          replyText = comp.length
+            ? `Oportunidades interessadas em Cartas Contempladas (${comp.length}):\n\n${comp.map((l) => `• **${l.name}** — Crédito R$ ${l.targetValue.toLocaleString('pt-BR')} (${l.status.replace('_', ' ')})`).join('\n')}`
+            : 'Nenhum lead solicitou carta contemplada ainda.';
+        } else {
+          const totalVol = leads.reduce((acc, l) => acc + (Number(l.targetValue) || 0), 0);
+          replyText = `Análise da Carteira Atual (${leads.length} oportunidades • R$ ${totalVol.toLocaleString('pt-BR')}):\n\n1. **Leads Quentes**: ${hot.length} prontos para proposta imediata.\n2. **Próximo Passo Recomendado**: Envie tabela comparativa sem juros para os leads em negociação e valide se possuem saldo para lance embutido de até 30%.\n3. **Script WhatsApp sugerido**: "Olá! Separei uma simulação personalizada sem juros bancários para o seu objetivo de crédito. Posso te enviar o comparativo de parcelas?"`;
         }
       }
 

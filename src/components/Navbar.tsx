@@ -11,6 +11,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { AuthPermissions, User } from '../types';
+import { isDemoUser } from '../services/demoData';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const isMaster = permissions.isMaster;
   const isGestor = permissions.isGestor;
+  const isDemo = isDemoUser(currentUser);
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-30">
@@ -71,6 +73,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right: Quick Actions & Verified Account Menu (No test role switcher in production) */}
       <div className="flex items-center gap-3">
+        {isDemo && (
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Modo Demo • Dados Fictícios</span>
+          </div>
+        )}
+
         {isMaster && (
           <button
             onClick={onOpenAdminMaster}
@@ -126,16 +135,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`inline-block px-1.5 py-0.2 rounded text-[9px] uppercase font-bold tracking-wider ${
                     isMaster
                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : isDemo
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : isGestor
                       ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                       : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                   }`}
                 >
-                  {isMaster ? 'Master SaaS' : isGestor ? 'Gestor' : 'Vendedor'}
+                  {isMaster ? 'Master SaaS' : isDemo ? 'Avaliador Demo' : isGestor ? 'Gestor' : 'Vendedor'}
                 </span>
                 <span className="text-[9px] text-slate-400 font-medium truncate max-w-[140px]">
                   {isMaster
                     ? 'Enterprise • Acesso Global'
+                    : isDemo
+                    ? 'Demonstração • Sandbox'
                     : currentUser?.planName?.replace('Plano ', '') || 'Enterprise'}
                 </span>
               </div>
@@ -154,12 +167,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
                       isMaster
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : isDemo
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : isGestor
                         ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                     }`}
                   >
-                    role: {currentUser?.role || 'guest'}
+                    {isDemo ? 'Conta Demo' : `role: ${currentUser?.role || 'guest'}`}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 truncate">{currentUser?.email}</p>
@@ -168,6 +183,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="truncate">
                     {isMaster
                       ? 'tenant_id: NULL • Plano Enterprise Global'
+                      : isDemo
+                      ? 'tenant: tenant-demo • Dados Fictícios'
                       : `${currentUser?.companyName} (${currentUser?.tenantId})`}
                   </span>
                 </div>
@@ -206,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Trocar Conta / Autenticar</span>
+                  <span>{isDemo ? 'Entrar com Conta Real' : 'Trocar Conta / Autenticar'}</span>
                 </button>
 
                 <button

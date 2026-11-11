@@ -17,16 +17,18 @@ import {
   ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Campaign, ConsorcioProduct } from '../types';
+import { Campaign, ConsorcioProduct, Lead } from '../types';
 
 interface CaptureLandingPageProps {
   campaigns: Campaign[];
   onLeadCaptured: () => void;
+  onDemoCaptureLead?: (leadData: Partial<Lead>) => void;
 }
 
 export const CaptureLandingPage: React.FC<CaptureLandingPageProps> = ({
   campaigns,
   onLeadCaptured,
+  onDemoCaptureLead,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<ConsorcioProduct>('Imóvel');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>(campaigns[0]?.id || '');
@@ -54,6 +56,31 @@ export const CaptureLandingPage: React.FC<CaptureLandingPageProps> = ({
 
     try {
       setIsSubmitting(true);
+
+      if (onDemoCaptureLead) {
+        onDemoCaptureLead({
+          name,
+          phone,
+          email,
+          city: city || 'São Paulo',
+          state: state || 'SP',
+          product: selectedProduct,
+          targetValue,
+          installmentBudget,
+          purchaseTimeline: purchaseTimeline as Lead['purchaseTimeline'],
+          interestedInContemplada,
+          source: campaigns.find((c) => c.id === selectedCampaignId)?.name || 'Landing Page Demo',
+        });
+        setSubmittedSuccess(true);
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        onLeadCaptured();
+        return;
+      }
+
       const res = await fetch('/api/capture/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

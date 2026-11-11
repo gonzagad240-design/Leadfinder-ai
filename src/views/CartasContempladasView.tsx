@@ -23,6 +23,7 @@ interface CartasContempladasViewProps {
   onAddCarta: (cartaData: Partial<CartaContemplada>) => Promise<void>;
   onUpdateCarta: (id: string, cartaData: Partial<CartaContemplada>) => Promise<void>;
   onDeleteCarta: (id: string) => Promise<void>;
+  isDemoMode?: boolean;
 }
 
 export const CartasContempladasView: React.FC<CartasContempladasViewProps> = ({
@@ -32,6 +33,7 @@ export const CartasContempladasView: React.FC<CartasContempladasViewProps> = ({
   onAddCarta,
   onUpdateCarta,
   onDeleteCarta,
+  isDemoMode = false,
 }) => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -72,6 +74,49 @@ export const CartasContempladasView: React.FC<CartasContempladasViewProps> = ({
     if (!matchLeadId) return;
     const lead = leads.find((l) => l.id === matchLeadId);
     if (!lead) return;
+
+    if (isDemoMode) {
+      setIsMatching(true);
+      const localMatches = cartas
+        .filter((c) => c.status !== 'transferida')
+        .map((carta) => {
+          let score = 60;
+          const reasons: string[] = [];
+          if (
+            carta.tipoCredito === lead.product ||
+            lead.product === 'Carta Contemplada'
+          ) {
+            score += 22;
+            reasons.push(`Categoria compatível (${carta.tipoCredito})`);
+          }
+          const diffRatio =
+            Math.abs(carta.valorCarta - lead.targetValue) /
+            Math.max(lead.targetValue || 1, 1);
+          if (diffRatio <= 0.35) {
+            score += 12;
+            reasons.push(
+              `Crédito alinhado à meta de R$ ${lead.targetValue.toLocaleString('pt-BR')}`
+            );
+          }
+          if (carta.valorParcela <= (lead.installmentBudget || 0) * 1.3) {
+            score += 5;
+            reasons.push('Parcela dentro da faixa informada pelo cliente');
+          }
+          if (reasons.length === 0) {
+            reasons.push('Cota disponível para composição de crédito');
+          }
+          return {
+            carta,
+            matchScore: Math.min(99, score),
+            reasons,
+          };
+        })
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 3);
+      setMatchedResults(localMatches);
+      setIsMatching(false);
+      return;
+    }
 
     try {
       setIsMatching(true);

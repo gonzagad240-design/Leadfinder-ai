@@ -1,6 +1,11 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { AuthPermissions, User, UserRole } from '../types';
 import { NavViewId } from '../components/Sidebar';
+import {
+  DEMO_USER,
+  isDemoModeEnabled,
+  setDemoModeEnabled,
+} from './demoData';
 
 export const MASTER_ALLOWED_VIEWS: NavViewId[] = [
   'admin_master',
@@ -244,6 +249,10 @@ export async function initializeAuthSession(): Promise<{
   redirectView: NavViewId;
 }> {
   try {
+    if (isDemoModeEnabled()) {
+      return initializeMasterPrivileges({ ...DEMO_USER });
+    }
+
     // 1. Check Supabase active Auth session if configured
     if (isSupabaseConfigured && supabase) {
       const {
@@ -328,6 +337,7 @@ export async function loginWithEmail(
           body: JSON.stringify({ email: cleanEmail, password }),
         }).catch(() => {});
 
+        setDemoModeEnabled(false);
         return initializeMasterPrivileges(profile);
       }
     }
@@ -348,6 +358,7 @@ export async function loginWithEmail(
       };
     }
 
+    setDemoModeEnabled(false);
     return initializeMasterPrivileges(mapProfileRowToUser(payload.user));
   } catch (err: any) {
     return {
@@ -416,6 +427,7 @@ export async function registerUserAccount(params: {
       };
     }
 
+    setDemoModeEnabled(false);
     return initializeMasterPrivileges(mapProfileRowToUser(payload.user));
   } catch (err: any) {
     return {
@@ -481,7 +493,22 @@ export async function updateUserProfile(
   }
 }
 
+export function loginAsDemoEvaluator(): {
+  user: User;
+  permissions: AuthPermissions;
+  redirectView: NavViewId;
+} {
+  setDemoModeEnabled(true);
+  const res = initializeMasterPrivileges({ ...DEMO_USER });
+  return {
+    user: res.user || { ...DEMO_USER },
+    permissions: res.permissions,
+    redirectView: 'dashboard',
+  };
+}
+
 export async function logoutAuthSession(): Promise<void> {
+  setDemoModeEnabled(false);
   try {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();

@@ -25,6 +25,7 @@ interface LeadHunterViewProps {
   campaigns: Campaign[];
   onCreateCampaign: (campaignData: Partial<Campaign>) => Promise<void>;
   onNavigate: (view: any) => void;
+  isDemoMode?: boolean;
 }
 
 const CATEGORIES = [
@@ -45,6 +46,7 @@ export const LeadHunterView: React.FC<LeadHunterViewProps> = ({
   campaigns,
   onCreateCampaign,
   onNavigate,
+  isDemoMode = false,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
   const [targetBudget, setTargetBudget] = useState('R$ 2.500 / mês');
@@ -67,6 +69,9 @@ export const LeadHunterView: React.FC<LeadHunterViewProps> = ({
     try {
       setIsGenerating(true);
       setCampaignLaunched(false);
+      if (isDemoMode) {
+        throw new Error('demo_local_strategy');
+      }
       const res = await fetch('/api/gemini/hunter-suggest', {
         method: 'POST',
         headers: {
