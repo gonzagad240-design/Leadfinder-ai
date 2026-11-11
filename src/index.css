@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #0B0F17;
+    color: #F1F5F9;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A364F;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3B82F6;
+}
+
+/* Pulse effects for hot leads */
+@keyframes flame-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px -2px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(249, 115, 22, 0.6);
+  }
+}
+
+.hot-lead-glow {
+  animation: flame-pulse 3s infinite ease-in-out;
+}

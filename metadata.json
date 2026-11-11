@@ -1,0 +1,6 @@
+{
+  "name": "LeadFinder AI - Plataforma SaaS de Prospecção e Vendas",
+  "description": "Plataforma SaaS de inteligência artificial especializada na prospecção, captação e qualificação de clientes para consórcios e cartas contempladas no Brasil.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

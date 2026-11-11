@@ -1,0 +1,283 @@
+{
+  "leads": [],
+  "cartas": [
+    {
+      "id": "carta-1",
+      "administradora": "Porto Seguro Consórcios",
+      "tipoCredito": "Imóvel",
+      "valorCarta": 450000,
+      "valorEntrada": 135000,
+      "saldoDevedor": 395000,
+      "parcelasRestantes": 168,
+      "valorParcela": 2850,
+      "grupo": "0812",
+      "cota": "342",
+      "documentacao": "Aprovada",
+      "status": "disponivel",
+      "condicoesTransferencia": "Transferência direta pela administradora. Comprovação de renda mínima de R$ 9.000.",
+      "updatedDate": "2026-11-08T12:09:26.907Z",
+      "contatoResponsavel": "Diretoria de Operações"
+    },
+    {
+      "id": "carta-2",
+      "administradora": "Embracon",
+      "tipoCredito": "Automóvel",
+      "valorCarta": 180000,
+      "valorEntrada": 58000,
+      "saldoDevedor": 152000,
+      "parcelasRestantes": 64,
+      "valorParcela": 2480,
+      "grupo": "0420",
+      "cota": "115",
+      "documentacao": "Aprovada",
+      "status": "disponivel",
+      "condicoesTransferencia": "Cota pronta para faturamento de veículo zero ou seminovo até 8 anos.",
+      "updatedDate": "2026-11-08T12:09:26.907Z",
+      "contatoResponsavel": "Marcos Vinicius"
+    },
+    {
+      "id": "carta-3",
+      "administradora": "Rodobens",
+      "tipoCredito": "Caminhão",
+      "valorCarta": 680000,
+      "valorEntrada": 210000,
+      "saldoDevedor": 580000,
+      "parcelasRestantes": 96,
+      "valorParcela": 6950,
+      "grupo": "1098",
+      "cota": "054",
+      "documentacao": "Aprovada",
+      "status": "disponivel",
+      "condicoesTransferencia": "Aceita PJ com mais de 2 anos de constituição.",
+      "updatedDate": "2026-11-08T12:09:26.907Z",
+      "contatoResponsavel": "Juliana Costa"
+    },
+    {
+      "id": "carta-4",
+      "administradora": "Caixa Consórcios",
+      "tipoCredito": "Imóvel",
+      "valorCarta": 700000,
+      "valorEntrada": 230000,
+      "saldoDevedor": 590000,
+      "parcelasRestantes": 190,
+      "valorParcela": 3890,
+      "grupo": "0654",
+      "cota": "201",
+      "documentacao": "Em dia",
+      "status": "reservada",
+      "condicoesTransferencia": "Reservada para análise cadastral de cliente.",
+      "updatedDate": "2026-11-07T12:09:26.907Z",
+      "contatoResponsavel": "Diretoria de Operações"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "camp-1",
+      "name": "Campanha Imóvel dos Sonhos 2026",
+      "product": "Imóvel",
+      "status": "ativa",
+      "budget": 4500,
+      "spent": 0,
+      "leadsCount": 0,
+      "conversions": 0,
+      "landingSlug": "imovel-sem-juros",
+      "channels": {
+        "metaAds": true,
+        "googleAds": true,
+        "whatsapp": true,
+        "landingPage": true
+      },
+      "utmCampaign": "leadfinder_imovel_q1",
+      "targetAudience": "Homens e Mulheres 28-55 anos interessados em compra de imóveis e investimentos",
+      "createdAt": "2026-10-24T12:09:26.907Z"
+    },
+    {
+      "id": "camp-2",
+      "name": "Captação Veículos & SUVs Sem Entrada",
+      "product": "Automóvel",
+      "status": "ativa",
+      "budget": 2500,
+      "spent": 0,
+      "leadsCount": 0,
+      "conversions": 0,
+      "landingSlug": "consorcio-veiculos",
+      "channels": {
+        "metaAds": true,
+        "googleAds": false,
+        "whatsapp": true,
+        "landingPage": true
+      },
+      "utmCampaign": "leadfinder_autos_suv",
+      "targetAudience": "Público interessado em troca de carro, seminovos e 0km",
+      "createdAt": "2026-10-29T12:09:26.907Z"
+    },
+    {
+      "id": "camp-3",
+      "name": "Cartas Contempladas Oportunidade",
+      "product": "Carta Contemplada",
+      "status": "ativa",
+      "budget": 3000,
+      "spent": 0,
+      "leadsCount": 0,
+      "conversions": 0,
+      "landingSlug": "cartas-contempladas-sp",
+      "channels": {
+        "metaAds": true,
+        "googleAds": true,
+        "whatsapp": true,
+        "landingPage": true
+      },
+      "utmCampaign": "cartas_contempladas_urgencia",
+      "targetAudience": "Compradores com entrada disponível precisando de liberação imediata",
+      "createdAt": "2026-11-01T12:09:26.907Z"
+    }
+  ],
+  "team": [],
+  "integrations": [
+    {
+      "id": "int-1",
+      "name": "WhatsApp Business Cloud API",
+      "provider": "whatsapp_cloud",
+      "category": "Mensageria",
+      "status": "connected",
+      "lastSync": "2026-11-08T12:09:26.907Z",
+      "description": "Envio autorizado de notificações de captação e disparos via WhatsApp oficial da Meta.",
+      "apiKey": "EAAQ3...configured",
+      "config": {
+        "phoneNumberId": "109823412049182",
+        "businessAccountId": "2981048102391"
+      }
+    },
+    {
+      "id": "int-2",
+      "name": "Meta Ads (Facebook & Instagram)",
+      "provider": "meta_ads",
+      "category": "Tráfego & Anúncios",
+      "status": "connected",
+      "lastSync": "2026-11-08T11:09:26.907Z",
+      "description": "Captação direta de leads a partir de Lead Ads e sincronização automática de formulários instantâneos.",
+      "apiKey": "EAABw...configured",
+      "config": {
+        "adAccountId": "act_49201940129",
+        "pixelId": "891029301923"
+      }
+    },
+    {
+      "id": "int-3",
+      "name": "Google Ads API",
+      "provider": "google_ads",
+      "category": "Tráfego & Anúncios",
+      "status": "pending",
+      "description": "Integração com extensões de formulário de lead na Rede de Pesquisa e YouTube.",
+      "apiKey": "",
+      "config": {
+        "customerId": "982-104-1920",
+        "developerToken": ""
+      }
+    },
+    {
+      "id": "int-4",
+      "name": "Mercado Pago Checkout Pro",
+      "provider": "mercado_pago",
+      "category": "Pagamentos",
+      "status": "connected",
+      "lastSync": "2026-11-08T12:09:26.907Z",
+      "description": "Processamento de assinaturas recorrentes de planos SaaS via Pix, Cartão de Crédito e Boleto.",
+      "apiKey": "APP_USR-7821...configured",
+      "config": {
+        "publicKey": "APP_USR-pub-1234"
+      }
+    }
+  ],
+  "whatsappChats": [],
+  "settings": {
+    "companyName": "Aliança Consórcios & Investimentos",
+    "cnpj": "34.892.120/0001-44",
+    "primaryPhone": "(11) 4003-8890",
+    "notificationEmail": "contato@aliancaconsorcios.com.br",
+    "autoDistributionEnabled": true,
+    "distributionMethod": "specialty_and_workload",
+    "currentPlan": "business",
+    "aiModel": "gemini-3.8-flash",
+    "lgpdDpoContact": "dpo@aliancaconsorcios.com.br"
+  },
+  "outboundProfiles": [
+    {
+      "id": "out-1",
+      "name": "Transportadoras & Frotas - Campinas e RMC",
+      "industry": "Transporte de Cargas & Logística",
+      "cities": [
+        "Campinas",
+        "Paulínia",
+        "Sumaré",
+        "Indaiatuba"
+      ],
+      "states": [
+        "SP"
+      ],
+      "targetCreditMin": 450000,
+      "targetCreditMax": 1200000,
+      "targetProduct": "Caminhão",
+      "provider": "google_places",
+      "webhookSecret": "whsec_transp_campinas_98214",
+      "apiKey": "AIzaSyD...places_api",
+      "autoQualifyGemini": true,
+      "status": "ativo",
+      "leadsFoundCount": 0,
+      "lastSync": "2026-11-08T12:56:01.551Z",
+      "createdAt": "2026-11-03T12:33:47.314Z"
+    },
+    {
+      "id": "out-2",
+      "name": "Construtoras & Empreiteiras - Grande SP",
+      "industry": "Construção Civil & Reformas",
+      "cities": [
+        "São Paulo",
+        "Barueri",
+        "Santo André",
+        "São Bernardo do Campo"
+      ],
+      "states": [
+        "SP"
+      ],
+      "targetCreditMin": 500000,
+      "targetCreditMax": 2500000,
+      "targetProduct": "Imóvel",
+      "provider": "phantombuster",
+      "webhookSecret": "whsec_construtoras_sp_44102",
+      "apiKey": "pb_key_891234...",
+      "autoQualifyGemini": true,
+      "status": "ativo",
+      "leadsFoundCount": 0,
+      "lastSync": "2026-11-08T08:33:47.314Z",
+      "createdAt": "2026-10-31T12:33:47.314Z"
+    },
+    {
+      "id": "out-3",
+      "name": "Produtores de Soja & Grãos - Triângulo Mineiro",
+      "industry": "Agronegócio & Cultivo de Grãos",
+      "cities": [
+        "Uberlândia",
+        "Uberaba",
+        "Araguari",
+        "Patos de Minas"
+      ],
+      "states": [
+        "MG"
+      ],
+      "targetCreditMin": 700000,
+      "targetCreditMax": 3000000,
+      "targetProduct": "Máquinas Agrícolas",
+      "provider": "outscraper",
+      "webhookSecret": "whsec_agro_minas_77319",
+      "apiKey": "out_token_9921...",
+      "autoQualifyGemini": true,
+      "status": "ativo",
+      "leadsFoundCount": 0,
+      "lastSync": "2026-11-07T12:33:47.314Z",
+      "createdAt": "2026-10-27T12:33:47.314Z"
+    }
+  ],
+  "leadsSeededOnce": true,
+  "demoDataCleaned": true
+}
