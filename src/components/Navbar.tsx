@@ -8,6 +8,7 @@ import {
   LogOut,
   KeyRound,
   ShieldCheck,
+  Camera,
 } from 'lucide-react';
 import { AuthPermissions, User } from '../types';
 
@@ -20,6 +21,7 @@ interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   onOpenAuthModal: () => void;
+  onOpenProfileSettings: () => void;
   onLogout: () => void;
 }
 
@@ -32,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   onSearchChange,
   onOpenAuthModal,
+  onOpenProfileSettings,
   onLogout,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -130,10 +133,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {isMaster ? 'Master SaaS' : isGestor ? 'Gestor' : 'Vendedor'}
                 </span>
-                <span className="text-[9px] text-slate-400 font-medium truncate max-w-[120px]">
+                <span className="text-[9px] text-slate-400 font-medium truncate max-w-[140px]">
                   {isMaster
-                    ? 'Acesso Global'
-                    : currentUser?.planName?.replace('Plano ', '') || 'Plano Ativo'}
+                    ? 'Enterprise • Acesso Global'
+                    : currentUser?.planName?.replace('Plano ', '') || 'Enterprise'}
                 </span>
               </div>
             </div>
@@ -164,13 +167,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
                   <span className="truncate">
                     {isMaster
-                      ? 'tenant_id: NULL • Acesso Total SaaS'
+                      ? 'tenant_id: NULL • Plano Enterprise Global'
                       : `${currentUser?.companyName} (${currentUser?.tenantId})`}
                   </span>
                 </div>
               </div>
 
               <div className="p-2 space-y-1">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onOpenProfileSettings();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-blue-300 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Alterar Foto &amp; Perfil</span>
+                </button>
+
                 {permissions.canAccessAdminMaster && (
                   <button
                     onClick={() => {

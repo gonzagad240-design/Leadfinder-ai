@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CreditCard,
   CheckCircle2,
@@ -12,7 +12,7 @@ import {
   Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { SaaSPlan } from '../types';
+import { SaaSPlan, User } from '../types';
 
 const PLANS: SaaSPlan[] = [
   {
@@ -70,21 +70,45 @@ const PLANS: SaaSPlan[] = [
   },
 ];
 
-export const SubscriptionsView: React.FC = () => {
+interface SubscriptionsViewProps {
+  currentUser?: User | null;
+  currentPlan?: string;
+  onChangePlan?: (planId: string) => Promise<void> | void;
+}
+
+export const SubscriptionsView: React.FC<SubscriptionsViewProps> = ({
+  currentUser,
+  currentPlan = 'enterprise',
+  onChangePlan,
+}) => {
+  const isMaster =
+    currentUser?.role === 'master' || currentUser?.role === 'admin_master';
+  const resolvedInitialPlan = isMaster
+    ? currentPlan || 'enterprise'
+    : currentUser?.planId || currentPlan || 'enterprise';
+
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [activePlan, setActivePlan] = useState<string>('business');
+  const [activePlan, setActivePlan] = useState<string>(resolvedInitialPlan);
   const [checkoutPlan, setCheckoutPlan] = useState<SaaSPlan | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card'>('pix');
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+
+  useEffect(() => {
+    setActivePlan(resolvedInitialPlan);
+  }, [resolvedInitialPlan]);
 
   const handleOpenCheckout = (plan: SaaSPlan) => {
     setCheckoutPlan(plan);
     setCheckoutSuccess(false);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    const selectedId = checkoutPlan?.id || 'enterprise';
     setCheckoutSuccess(true);
-    setActivePlan(checkoutPlan?.id || 'pro');
+    setActivePlan(selectedId);
+    if (onChangePlan) {
+      await onChangePlan(selectedId);
+    }
     confetti({
       particleCount: 100,
       spread: 70,
@@ -140,6 +164,28 @@ export const SubscriptionsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Enterprise Unlimited Unlocked Status */}
+      {activePlan === 'enterprise' && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-amber-950/30 border border-emerald-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-white">
+                Plano Enterprise Ativo — Acesso Total &amp; Ilimitado Desbloqueado
+              </p>
+              <p className="text-[11px] text-slate-300">
+                Leads/mês ilimitados, equipe ilimitada de vendedores, Gemini 3.8 Copilot, WhatsApp Business API e conectores dedicados liberados por predefinição.
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[10px] font-bold text-emerald-300 uppercase tracking-wider shrink-0">
+            Enterprise Desbloqueado
+          </span>
+        </div>
+      )}
+
       {/* Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANS.map((plan) => {
@@ -150,15 +196,23 @@ export const SubscriptionsView: React.FC = () => {
             <div
               key={plan.id}
               className={`p-6 rounded-3xl border transition-all flex flex-col justify-between relative shadow-xl ${
-                plan.popular
+                isCurrent
+                  ? 'bg-gradient-to-b from-emerald-950/35 via-slate-900 to-slate-950 border-emerald-500/60 ring-1 ring-emerald-500/30'
+                  : plan.popular
                   ? 'bg-gradient-to-b from-blue-950/40 via-slate-900 to-slate-950 border-blue-500/50 ring-1 ring-blue-500/30'
                   : 'bg-slate-900 border-slate-800'
               }`}
             >
-              {plan.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-md">
-                  Mais Popular
+              {isCurrent ? (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-md">
+                  Plano Ativo
                 </span>
+              ) : (
+                plan.popular && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-[10px] tracking-wider uppercase shadow-md">
+                    Mais Popular
+                  </span>
+                )
               )}
 
               <div className="space-y-4">
@@ -210,13 +264,13 @@ export const SubscriptionsView: React.FC = () => {
                   onClick={() => handleOpenCheckout(plan)}
                   className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isCurrent
-                      ? 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
                       : plan.popular
                       ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
                       : 'bg-slate-800 hover:bg-slate-750 text-white'
                   }`}
                 >
-                  {isCurrent ? 'Plano Atual' : 'Contratar Plano'}
+                  {isCurrent ? (plan.id === 'enterprise' ? 'Plano Atual (Ilimitado)' : 'Plano Atual') : 'Contratar Plano'}
                 </button>
               </div>
             </div>

@@ -152,6 +152,7 @@ export async function upsertDbProfile(
         planId: profileData.planId || (safeRole === 'master' ? 'enterprise' : 'pro'),
         planName: profileData.planName || (safeRole === 'master' ? 'Plano Enterprise' : 'Plano Profissional'),
         maxSellersLimit: safeRole === 'master' ? 999999 : (profileData.maxSellersLimit ?? 3),
+        ...(profileData.avatar !== undefined ? { avatar: profileData.avatar } : {}),
         updatedAt: new Date(),
       },
     });
@@ -159,6 +160,39 @@ export async function upsertDbProfile(
   const saved = await getDbProfileByEmail(normalizedEmail);
   if (!saved) throw new Error('Falha ao recuperar perfil salvo em public.profiles.');
   return saved;
+}
+
+export async function updateDbProfileDetails(
+  id: string,
+  updates: {
+    avatar?: string;
+    name?: string;
+    phone?: string;
+    region?: string;
+  }
+): Promise<User | null> {
+  const existing = await getDbProfileById(id);
+  if (!existing) return null;
+
+  const patch: Record<string, any> = { updatedAt: new Date() };
+  if (typeof updates.avatar === 'string' && updates.avatar.trim()) {
+    patch.avatar = updates.avatar.trim();
+  }
+  if (typeof updates.name === 'string' && updates.name.trim()) {
+    patch.name = updates.name.trim();
+  }
+  if (typeof updates.phone === 'string') {
+    patch.phone = updates.phone.trim();
+  }
+  if (typeof updates.region === 'string' && updates.region.trim()) {
+    patch.region = updates.region.trim();
+  }
+
+  await db.update(profiles).set(patch).where(eq(profiles.id, id));
+  const refreshed = await getDbProfileById(id);
+  if (!refreshed) return null;
+  const { passwordHash: _ph, ...safeUser } = refreshed;
+  return safeUser;
 }
 
 export async function getDbLeads(): Promise<Lead[]> {

@@ -19,18 +19,24 @@ import {
   Cpu,
   Layers,
   Zap,
-  Globe
+  Globe,
+  Camera
 } from 'lucide-react';
-import { Integration } from '../types';
+import { Integration, User } from '../types';
+import { ProfileAvatarEditor, ProfileUpdatePayload } from '../components/ProfileSettingsModal';
 
 interface SettingsIntegrationsViewProps {
   integrations: Integration[];
   onUpdateIntegration: (id: string, updatedData: Partial<Integration>) => Promise<void>;
+  currentUser?: User | null;
+  onSaveProfile?: (updates: ProfileUpdatePayload) => Promise<{ error?: string }>;
 }
 
 export const SettingsIntegrationsView: React.FC<SettingsIntegrationsViewProps> = ({
   integrations,
   onUpdateIntegration,
+  currentUser,
+  onSaveProfile,
 }) => {
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -142,6 +148,25 @@ export const SettingsIntegrationsView: React.FC<SettingsIntegrationsViewProps> =
           </p>
         </div>
       </div>
+
+      {/* User Profile & Photo Settings Card */}
+      {currentUser && onSaveProfile && (
+        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <Camera className="w-4 h-4 text-blue-400" />
+              <span>Definições do Meu Perfil &amp; Foto</span>
+            </h2>
+            <span className="text-[11px] text-slate-400">
+              URL de imagem ou upload local
+            </span>
+          </div>
+          <ProfileAvatarEditor
+            currentUser={currentUser}
+            onSaveProfile={onSaveProfile}
+          />
+        </div>
+      )}
 
       {/* Real Database Status Card (Cloud SQL PostgreSQL & Live SSE Stream) */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-xl">

@@ -21,6 +21,7 @@ import {
   initializeAuthSession,
   initializeMasterPrivileges,
   logoutAuthSession,
+  updateUserProfile,
 } from './services/authService';
 import {
   fetchRealtimeProfiles,
@@ -39,6 +40,10 @@ import { Navbar } from './components/Navbar';
 import { LeadModal } from './components/LeadModal';
 import { LeadDetailDrawer } from './components/LeadDetailDrawer';
 import { AuthModal } from './components/AuthModal';
+import {
+  ProfileSettingsModal,
+  ProfileUpdatePayload,
+} from './components/ProfileSettingsModal';
 import { CaptureLandingPage } from './components/CaptureLandingPage';
 
 // Views
@@ -73,11 +78,13 @@ export default function App() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isQualifying, setIsQualifying] = useState(false);
 
   // Authenticated User & Privileges State (loaded exclusively from `public.profiles`)
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [permissions, setPermissions] = useState<AuthPermissions>(DEFAULT_LOGGED_OUT_PERMISSIONS);
+  const [currentPlan, setCurrentPlan] = useState<string>('enterprise');
 
   // Operational Domain State
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -101,6 +108,7 @@ export default function App() {
       setIntegrations([]);
       setWhatsappChats([]);
       setOutboundProfiles([]);
+      setCurrentPlan('enterprise');
       return;
     }
 
@@ -125,15 +133,27 @@ export default function App() {
       // Only Master & Gestor load system configuration & outbound profiles
       const canLoadConfig = activePermissions.isMaster || activePermissions.isGestor;
       if (canLoadConfig) {
-        const [integrationsRes, outboundRes] = await Promise.all([
+        const [integrationsRes, outboundRes, settingsRes] = await Promise.all([
           fetch('/api/integrations', { credentials: 'include' }),
           fetch('/api/outbound/profiles', { credentials: 'include' }),
+          fetch('/api/settings', { credentials: 'include' }),
         ]);
         setIntegrations(integrationsRes.ok ? await integrationsRes.json() : []);
         setOutboundProfiles(outboundRes.ok ? await outboundRes.json() : []);
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          setCurrentPlan(
+            activePermissions.isMaster
+              ? settingsData?.currentPlan || 'enterprise'
+              : activeUser?.planId || settingsData?.currentPlan || 'enterprise'
+          );
+        } else {
+          setCurrentPlan(activeUser?.planId || 'enterprise');
+        }
       } else {
         setIntegrations([]);
         setOutboundProfiles([]);
+        setCurrentPlan(activeUser?.planId || 'enterprise');
       }
     } catch (err) {
       console.error('Error loading LeadFinder operational datasets:', err);
@@ -534,6 +554,45 @@ export default function App() {
     }
   };
 
+  const handleChangePlan = async (planId: string) => {
+    setCurrentPlan(planId);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ currentPlan: planId }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        if (updated?.currentPlan) {
+          setCurrentPlan(updated.currentPlan);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating active plan setting:', err);
+    }
+  };
+
+  const handleSaveProfile = async (
+    updates: ProfileUpdatePayload
+  ): Promise<{ error?: string }> => {
+    if (!currentUser) {
+      return { error: 'Sessão não autenticada.' };
+    }
+    const res = await updateUserProfile(currentUser, updates);
+    if (res.error || !res.user) {
+      return { error: res.error || 'Erro ao atualizar perfil.' };
+    }
+    const updatedUser = res.user;
+    setCurrentUser(updatedUser);
+    setPermissions(res.permissions);
+    setTeam((prev) =>
+      prev.map((member) => (member.id === updatedUser.id ? updatedUser : member))
+    );
+    return {};
+  };
+
   const handleAddTeamMember = async (memberData: Partial<User>) => {
     try {
       const res = await fetch('/api/team', {
@@ -639,6 +698,7 @@ export default function App() {
             }
           }}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenProfileSettings={() => setIsProfileModalOpen(true)}
           onLogout={handleLogout}
         />
 
@@ -772,13 +832,19 @@ export default function App() {
               )}
 
               {currentView === 'subscriptions' && permissions.allowedViews.includes('subscriptions') && (
-                <SubscriptionsView />
+                <SubscriptionsView
+                  currentUser={currentUser}
+                  currentPlan={currentPlan}
+                  onChangePlan={handleChangePlan}
+                />
               )}
 
               {currentView === 'settings' && permissions.allowedViews.includes('settings') && (
                 <SettingsIntegrationsView
                   integrations={integrations}
                   onUpdateIntegration={handleUpdateIntegration}
+                  currentUser={currentUser}
+                  onSaveProfile={handleSaveProfile}
                 />
               )}
 
@@ -842,6 +908,13 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      <ProfileSettingsModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+        onSaveProfile={handleSaveProfile}
       />
     </div>
   );

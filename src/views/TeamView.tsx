@@ -85,8 +85,10 @@ export const TeamView: React.FC<TeamViewProps> = ({
   }, [currentUser?.id, currentUser?.role, currentUser?.tenantId]);
 
   const sellers = liveProfiles.filter((u) => u.role === 'vendedor');
-  const maxSellers = isMaster ? 999 : currentUser?.maxSellersLimit || 3;
-  const planName = currentUser?.planName || 'Plano Profissional';
+  const maxSellers = isMaster ? 999999 : currentUser?.maxSellersLimit || 3;
+  const planName = isMaster
+    ? 'Plano Enterprise (Ilimitado)'
+    : currentUser?.planName || 'Plano Enterprise';
   const isLimitReached = !isMaster && sellers.length >= maxSellers;
   const quotaPercent = isMaster
     ? 0

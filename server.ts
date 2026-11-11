@@ -19,6 +19,7 @@ import {
   getDbProfileById,
   getDbProfiles,
   upsertDbProfile,
+  updateDbProfileDetails,
   deleteDbProfile,
   incrementDbProfileActiveLeads,
   getDbMasterOverview,
@@ -32,7 +33,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const SESSION_COOKIE_NAME = 'leadfinder_session';
 const SESSION_SECRET =
@@ -102,6 +103,14 @@ async function resolveSessionProfile(req: express.Request) {
   const dbProfile = await getDbProfileByEmail(activeEmail);
   if (dbProfile) {
     const { passwordHash: _ph, ...safeProfile } = dbProfile;
+    if (safeProfile.role === 'master') {
+      return {
+        ...safeProfile,
+        planId: 'enterprise',
+        planName: 'Plano Enterprise',
+        maxSellersLimit: 999999,
+      };
+    }
     return safeProfile;
   }
   return null;
@@ -647,7 +656,7 @@ function getInitialData() {
       notificationEmail: 'contato@aliancaconsorcios.com.br',
       autoDistributionEnabled: true,
       distributionMethod: 'specialty_and_workload', // 'round_robin' | 'specialty_and_workload' | 'performance'
-      currentPlan: 'business',
+      currentPlan: 'enterprise',
       aiModel: 'gemini-3.8-flash',
       lgpdDpoContact: 'dpo@aliancaconsorcios.com.br'
     },
@@ -745,6 +754,14 @@ function loadDatabase() {
         parsed.demoDataCleaned = true;
       }
 
+      if (!parsed.enterpriseDefaultApplied) {
+        parsed.settings = {
+          ...(parsed.settings || {}),
+          currentPlan: 'enterprise',
+        };
+        parsed.enterpriseDefaultApplied = true;
+      }
+
       saveDatabase(parsed);
       return parsed;
     }
@@ -757,6 +774,7 @@ function loadDatabase() {
     leads: [],
     demoDataCleaned: true,
     leadsSeededOnce: true,
+    enterpriseDefaultApplied: true,
   };
   saveDatabase(defaultData);
   return defaultData;
@@ -816,6 +834,58 @@ app.get('/api/auth/profile', async (req, res) => {
   } catch (err) {
     console.error('Error in GET /api/auth/profile:', err);
     res.status(500).json({ error: 'Erro ao consultar perfil.' });
+  }
+});
+
+app.put('/api/auth/profile', async (req, res) => {
+  try {
+    const caller = await resolveSessionProfile(req);
+    if (!caller) {
+      return res.status(401).json({ error: 'Sessão não autenticada.' });
+    }
+
+    const avatarRaw = typeof req.body?.avatar === 'string' ? req.body.avatar.trim() : undefined;
+    if (avatarRaw !== undefined && avatarRaw.length > 0) {
+      const isHttpUrl = /^https?:\/\/.+/i.test(avatarRaw);
+      const isDataImage = /^data:image\/(png|jpeg|jpg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=]+$/i.test(avatarRaw);
+      if (!isHttpUrl && !isDataImage) {
+        return res.status(400).json({
+          error: 'Formato de imagem inválido. Utilize uma URL https:// ou carregue uma imagem válida.',
+        });
+      }
+      if (avatarRaw.length > 5_000_000) {
+        return res.status(413).json({
+          error: 'Imagem demasiado grande. Escolha uma imagem menor que 5MB.',
+        });
+      }
+    }
+
+    const updated = await updateDbProfileDetails(caller.id, {
+      avatar: avatarRaw,
+      name: typeof req.body?.name === 'string' ? req.body.name : undefined,
+      phone: typeof req.body?.phone === 'string' ? req.body.phone : undefined,
+      region: typeof req.body?.region === 'string' ? req.body.region : undefined,
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Perfil não localizado para atualização.' });
+    }
+
+    const finalUser =
+      updated.role === 'master'
+        ? {
+            ...updated,
+            planId: 'enterprise',
+            planName: 'Plano Enterprise',
+            maxSellersLimit: 999999,
+          }
+        : updated;
+
+    broadcastProfileEvent('profiles_updated').catch(() => {});
+    res.json({ success: true, user: finalUser });
+  } catch (err) {
+    console.error('Error in PUT /api/auth/profile:', err);
+    res.status(500).json({ error: 'Erro ao atualizar foto e dados do perfil.' });
   }
 });
 
@@ -2050,7 +2120,7 @@ app.post('/api/team', async (req, res) => {
 
     const maxLimit = caller.role === 'master'
       ? 999999
-      : (gestor?.maxSellersLimit || (gestor?.planId === 'basic' ? 1 : gestor?.planId === 'business' ? 10 : 3));
+      : (gestor?.maxSellersLimit || (gestor?.planId === 'basic' ? 1 : gestor?.planId === 'business' ? 10 : gestor?.planId === 'enterprise' ? 999999 : 3));
     const planName = gestor?.planName || 'Plano Profissional';
 
     if (caller.role !== 'master' && currentSellers.length >= maxLimit) {
@@ -2193,7 +2263,14 @@ app.get('/api/settings', async (req, res) => {
     return res.status(403).json({ error: 'Acesso restrito.' });
   }
   const db = loadDatabase();
-  res.json(db.settings || {});
+  const settings = db.settings || {};
+  res.json({
+    ...settings,
+    currentPlan:
+      caller.role === 'master'
+        ? settings.currentPlan || 'enterprise'
+        : caller.planId || settings.currentPlan || 'enterprise',
+  });
 });
 
 app.put('/api/settings', async (req, res) => {
@@ -2594,7 +2671,13 @@ async function seedCloudSqlDatabaseIfEmpty() {
     // Guarantee ONLY the logged Master user (gonzagad240@gmail.com) exists if missing, with role='master' & tenant_id=NULL.
     // Never seed fictional/mock sellers or gestores into public.profiles.
     const masterProfile = await getDbProfileByEmail('gonzagad240@gmail.com');
-    if (!masterProfile || masterProfile.role !== 'master' || masterProfile.tenantId !== null) {
+    if (
+      !masterProfile ||
+      masterProfile.role !== 'master' ||
+      masterProfile.tenantId !== null ||
+      masterProfile.planId !== 'enterprise' ||
+      (masterProfile.maxSellersLimit ?? 0) < 999999
+    ) {
       await upsertDbProfile({
         id: masterProfile?.id || 'user-master',
         email: 'gonzagad240@gmail.com',

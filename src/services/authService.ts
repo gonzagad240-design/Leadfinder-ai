@@ -425,6 +425,62 @@ export async function registerUserAccount(params: {
   }
 }
 
+export async function updateUserProfile(
+  currentUser: User,
+  updates: {
+    avatar?: string;
+    name?: string;
+    phone?: string;
+    region?: string;
+  }
+): Promise<{
+  user: User | null;
+  permissions: AuthPermissions;
+  error?: string;
+}> {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const supaPatch: Record<string, any> = {};
+      if (updates.avatar) supaPatch.avatar = updates.avatar;
+      if (updates.name) supaPatch.name = updates.name;
+      if (updates.phone !== undefined) supaPatch.phone = updates.phone;
+      if (updates.region) supaPatch.region = updates.region;
+
+      if (Object.keys(supaPatch).length > 0) {
+        await supabase.from('profiles').update(supaPatch).eq('id', currentUser.id);
+      }
+    }
+
+    const res = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updates),
+    });
+
+    const payload = await res.json();
+    if (!res.ok || !payload.user) {
+      return {
+        user: null,
+        permissions: initializeMasterPrivileges(currentUser).permissions,
+        error: payload.error || 'Não foi possível guardar as alterações de perfil.',
+      };
+    }
+
+    const elevated = initializeMasterPrivileges(mapProfileRowToUser(payload.user));
+    return {
+      user: elevated.user,
+      permissions: elevated.permissions,
+    };
+  } catch (err: any) {
+    return {
+      user: null,
+      permissions: initializeMasterPrivileges(currentUser).permissions,
+      error: err?.message || 'Erro de comunicação ao atualizar perfil.',
+    };
+  }
+}
+
 export async function logoutAuthSession(): Promise<void> {
   try {
     if (isSupabaseConfigured && supabase) {

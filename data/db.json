@@ -197,7 +197,7 @@
     "notificationEmail": "contato@aliancaconsorcios.com.br",
     "autoDistributionEnabled": true,
     "distributionMethod": "specialty_and_workload",
-    "currentPlan": "business",
+    "currentPlan": "enterprise",
     "aiModel": "gemini-3.8-flash",
     "lgpdDpoContact": "dpo@aliancaconsorcios.com.br"
   },
@@ -279,5 +279,6 @@
     }
   ],
   "leadsSeededOnce": true,
-  "demoDataCleaned": true
+  "demoDataCleaned": true,
+  "enterpriseDefaultApplied": true
 }
